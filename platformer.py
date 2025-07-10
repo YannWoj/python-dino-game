@@ -14,9 +14,11 @@ MUSTARD = (209, 206, 25)
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Platformer")
+clock = pygame.time.Clock()
 
 # player
 player_image = pygame.image.load("assets/images/vita_00.png")
+player_x = 300
 
 # platforms
 platforms = [
@@ -32,10 +34,23 @@ running = True
 while running:
 # game loop
 
-    # input
+    # -----
+    # INPUT
+    # -----
+
+    # check for quit
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
+    # player input
+    keys = pygame.key.get_pressed() # Held (maintenues) keys (True/False)
+
+    if keys[pygame.K_LEFT]:
+        player_x -= 5
+    if keys[pygame.K_RIGHT]:
+        player_x += 5
+
     # update
     
     # draw
@@ -46,8 +61,10 @@ while running:
         pygame.draw.rect(screen, (MUSTARD), p)
     
     # present screen
-    screen.blit(player_image, (300, 100))
+    screen.blit(player_image, (player_x, 100))
     pygame.display.flip()
+
+    clock.tick(60)
 
 # quit
 pygame.quit()
