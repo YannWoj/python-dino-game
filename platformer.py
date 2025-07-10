@@ -42,15 +42,30 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
+                
     # player input
+    new_player_x = player_x
     keys = pygame.key.get_pressed() # Held (maintenues) keys (True/False)
 
     if keys[pygame.K_LEFT]:
-        player_x -= 5
+        new_player_x -= 5
     if keys[pygame.K_RIGHT]:
-        player_x += 5
+        new_player_x += 5
 
+    # horizontal movement
+    new_player_rect = pygame.Rect(new_player_x, 200, 72, 72)
+    x_collision = False
+
+    # check against every platform
+    for p in platforms:
+        if p.colliderect(new_player_rect):
+            x_collision = True
+            break
+
+    # set x_collision to true
+    if x_collision == False:
+        player_x = new_player_x
+    
     # update
     
     # draw
@@ -61,7 +76,8 @@ while running:
         pygame.draw.rect(screen, (MUSTARD), p)
     
     # present screen
-    screen.blit(player_image, (player_x, 100))
+    screen.blit(player_image, (player_x, 200))
+    pygame.draw.rect(screen, (255, 0, 0), (player_x, 200, 72, 72), 1)
     pygame.display.flip()
 
     clock.tick(60)
