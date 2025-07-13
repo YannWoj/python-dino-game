@@ -1,6 +1,8 @@
 # Dinosaur player images by Arks
 # https://arks.itch.io/dino-characters
 # X account : @ScissorMarks
+# Coin sprite bt DasBilligeAlien
+# https://opengameart.org/content/rotating-coin-0
 
 import pygame
 
@@ -12,12 +14,16 @@ MUSTARD = (209, 206, 25)
 
 # init
 pygame.init()
+pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Platformer")
 clock = pygame.time.Clock()
 
+# sounds
+coin_sound = pygame.mixer.Sound("assets/sounds/bonus/coins/coin_sound.wav")
+
 # player
-player_image = pygame.image.load("assets/images/vita_00.png")
+player_image = pygame.image.load("assets/images/characters/vita_00.png")
 player_x = 300
 
 player_y = 0
@@ -45,6 +51,20 @@ platforms = [
     pygame.Rect(WIDTH - 70, HEIGHT - 180, 50, 30)
 ]
 
+# coins
+coin_images = [
+    pygame.image.load(f"assets/images/bonus/coins/coin{i}.png") for i in range(6)
+    ]
+coins = [
+    pygame.Rect(108, 200, 23, 23),
+    pygame.Rect(200, 250, 23, 23)
+]
+
+coin_frame = 0
+coin_frame_timer = 0
+
+score = 0
+
 running = True
 while running:
 # game loop
@@ -69,6 +89,10 @@ while running:
         new_player_x += 5
     if keys[pygame.K_SPACE] and player_on_ground:
         player_speed = -8.75
+
+    # ------
+    # UPDATE
+    # ------
 
     # horizontal movement
     new_player_rect = pygame.Rect(new_player_x, player_y, player_width, player_height)
@@ -109,19 +133,42 @@ while running:
 
     if y_collision == False:
         player_y = new_player_y
+
+    # see if any coins have been collected
+    player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+    for coin in coins:
+        if coin.colliderect(player_rect):
+            coins.remove(coin) # from the list
+            score+=1
+            coin_sound.play()
+
+    print("Score : " + str(score))
+
+    # ----
+    # DRAW
+    # ----
     
-    # update
-    
-    # draw
     # background
     screen.fill(DARK_GREY)
     # platforms
     for p in platforms:
         pygame.draw.rect(screen, (MUSTARD), p)
     
-    # present screen
+    # player
     screen.blit(player_image, (player_x, player_y))
+    # player rect
     pygame.draw.rect(screen, (255, 0, 0), (player_x, player_y, player_width, player_height), 1)
+
+    # coins
+    for coin in coins:
+        screen.blit(coin_images[coin_frame], (coin[0], coin[1]))
+
+    # coin animation timing
+    coin_frame_timer += 1
+    if coin_frame_timer >= 4:
+        coin_frame = (coin_frame + 1) % len(coin_images)
+        coin_frame_timer = 0
+    
     pygame.display.flip()
 
     clock.tick(60)
