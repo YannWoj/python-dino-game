@@ -3,6 +3,8 @@
 # X account : @ScissorMarks
 # Coin sprite bt DasBilligeAlien
 # https://opengameart.org/content/rotating-coin-0
+# Spike sprites by bevouliin.com
+# https://opengameart.org/content/bevouliin-free-ingame-items-spike-monsters
 
 import pygame
 import math
@@ -21,7 +23,12 @@ pygame.display.set_caption("Platformer")
 clock = pygame.time.Clock()
 
 # sounds
+# coin
 coin_sound = pygame.mixer.Sound("assets/sounds/bonus/coins/coin_sound.wav")
+# hit damage
+hit_damage_sound = pygame.mixer.Sound("assets/sounds/damages/hit-damage.wav")
+# jump
+jump_sound = pygame.mixer.Sound("assets/sounds/jumps/player_jump.wav")
 
 # player
 player_image = pygame.image.load("assets/images/characters/vita_00.png")
@@ -57,18 +64,34 @@ coin_images = [
     pygame.image.load(f"assets/images/bonus/coins/coin{i}.png") for i in range(6)
     ]
 coins = [
-    pygame.Rect(200, 250, 23, 23),
-    pygame.Rect(460, 220, 23, 23),   # au-dessus plateforme droite
-    pygame.Rect(120, 220, 23, 23),   # au-dessus plateforme gauche
-    pygame.Rect(WIDTH - 100, HEIGHT - 200, 23, 23),  # sur plateforme tout en haut à droite
-    pygame.Rect(WIDTH - 80, HEIGHT - 230, 23, 23),   # encore plus haut
-    pygame.Rect(WIDTH - 60, HEIGHT - 260, 23, 23),   # dernier saut difficile
+    pygame.Rect(220, 260, 23, 23),
+    pygame.Rect(460, 220, 23, 23),
+    pygame.Rect(120, 220, 23, 23),
+    pygame.Rect(WIDTH - 100, HEIGHT - 200, 23, 23),
+    pygame.Rect(WIDTH - 80, HEIGHT - 230, 23, 23),
+    pygame.Rect(WIDTH - 60, HEIGHT - 260, 23, 23),
+    pygame.Rect(150 + 16, HEIGHT - 90, 23, 23),
+    pygame.Rect(400 + 16, HEIGHT - 90, 23, 23),
+    pygame.Rect(290, HEIGHT - 130, 23, 23),
+    pygame.Rect(38, (HEIGHT // 2) + 50, 23, 23)
 ]
 
 coin_frame = 0
 coin_frame_timer = 0
 
+# enemies
+enemy_image = pygame.image.load("assets/images/enemies/spikes/spike_monster_B.png")
+
+enemies = [
+    pygame.Rect(150, 274, 50, 26),
+    pygame.Rect(400 ,274, 50, 26),
+    pygame.Rect(400 ,HEIGHT - 56, 50, 26),
+    pygame.Rect(150 ,HEIGHT - 56, 50, 26)
+]
+
+# score & life
 score = 0
+lives = 3
 
 running = True
 while running:
@@ -94,6 +117,7 @@ while running:
         new_player_x += 5
     if keys[pygame.K_SPACE] and player_on_ground:
         player_speed = -8.75
+        jump_sound.play()
 
     # ------
     # UPDATE
@@ -146,8 +170,18 @@ while running:
             coins.remove(coin) # from the list
             score+=1
             coin_sound.play()
+    # print("Score : " + str(score))
 
-    print("Score : " + str(score))
+    # see if the player has hit an enemy
+    for enemy in enemies:
+        if enemy.colliderect(player_rect):
+            lives-=1
+            hit_damage_sound.play()
+            # reset player position
+            player_x = 300
+            player_y = 0
+            player_speed = 0
+    # print("Lives : " + str(lives))
 
     # ----
     # DRAW
@@ -174,7 +208,12 @@ while running:
     if coin_frame_timer >= 4:
         coin_frame = (coin_frame + 1) % len(coin_images)
         coin_frame_timer = 0
-    
+
+    # enemies
+    for enemy in enemies:
+        screen.blit(enemy_image, (enemy.x, enemy.y))
+
+    # flip
     pygame.display.flip()
 
     clock.tick(60)
