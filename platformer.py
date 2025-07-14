@@ -9,6 +9,12 @@
 import pygame
 import math
 
+def drawText(text_to_draw, x, y, align="topleft"):
+    text = font.render(text_to_draw, True, MUSTARD, DARK_GREY)
+    text_rect = text.get_rect()
+    setattr(text_rect, align, (x, y))
+    screen.blit(text, text_rect)
+
 # constant variables
 WIDTH = 700
 HEIGHT = 500
@@ -21,6 +27,10 @@ pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Platformer")
 clock = pygame.time.Clock()
+font = pygame.font.Font(pygame.font.get_default_font(), 24)
+
+# games states = playing // win // lose
+game_state = 'playing'
 
 # sounds
 # coin
@@ -89,6 +99,9 @@ enemies = [
     pygame.Rect(150 ,HEIGHT - 56, 50, 26)
 ]
 
+# hearts
+heart_image_32 = pygame.image.load("assets/images/bonus/hearts/heart_32x32.png")
+
 # score & life
 score = 0
 lives = 3
@@ -105,117 +118,150 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-                
-    # player input
+
+    # simulating x and y positions
     new_player_x = player_x
     new_player_y = player_y
-    keys = pygame.key.get_pressed() # Held (maintenues) keys (True/False)
 
-    if keys[pygame.K_LEFT]:
-        new_player_x -= 5
-    if keys[pygame.K_RIGHT]:
-        new_player_x += 5
-    if keys[pygame.K_SPACE] and player_on_ground:
-        player_speed = -8.75
-        jump_sound.play()
+    if game_state == "playing":
+        # player input
+        keys = pygame.key.get_pressed() # Held (maintenues) keys (True/False)
+
+        if keys[pygame.K_LEFT]:
+            new_player_x -= 5
+        if keys[pygame.K_RIGHT]:
+            new_player_x += 5
+        if keys[pygame.K_SPACE] and player_on_ground:
+            player_speed = -8.75
+            jump_sound.play()
 
     # ------
     # UPDATE
     # ------
 
-    # horizontal movement
-    new_player_rect = pygame.Rect(new_player_x, player_y, player_width, player_height)
-    x_collision = False
+    if game_state == "playing":
+        # horizontal movement
+        new_player_rect = pygame.Rect(new_player_x, player_y, player_width, player_height)
+        x_collision = False
 
-    # check against every platform
-    for p in platforms:
-        if p.colliderect(new_player_rect):
-            x_collision = True
-            break
+        # check against every platform
+        for p in platforms:
+            if p.colliderect(new_player_rect):
+                x_collision = True
+                break
 
-    # set x_collision to true
-    if x_collision == False:
-        player_x = new_player_x
+        # set x_collision to true
+        if x_collision == False:
+            player_x = new_player_x
 
-    # vertical movement
+        # vertical movement
 
-    player_speed += player_acceleration
-    new_player_y += player_speed
-    # print(player_y)
-    # print(player_speed)
+        player_speed += player_acceleration
+        new_player_y += player_speed
+        # print(player_y)
+        # print(player_speed)
 
-    new_player_rect = pygame.Rect(player_x, new_player_y, player_width, player_height)
-    y_collision = False
-    player_on_ground = False
+        new_player_rect = pygame.Rect(player_x, new_player_y, player_width, player_height)
+        y_collision = False
+        player_on_ground = False
 
-    for p in platforms:
-        if p.colliderect(new_player_rect):
-            y_collision = True
-            player_speed = 0
-            # if the platform is below the player
-            if p[1] > new_player_y:
-                # stick the player to the platform
-                player_y = p[1] - player_height
-                player_on_ground = True
-            break
-    # print(player_on_ground)
+        for p in platforms:
+            if p.colliderect(new_player_rect):
+                y_collision = True
+                player_speed = 0
+                # if the platform is below the player
+                if p[1] > new_player_y:
+                    # stick the player to the platform
+                    player_y = p[1] - player_height
+                    player_on_ground = True
+                break
+        # print(player_on_ground)
 
-    if y_collision == False:
-        player_y = new_player_y
+        if y_collision == False:
+            player_y = new_player_y
 
-    # see if any coins have been collected
-    player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
-    for coin in coins:
-        if coin.colliderect(player_rect):
-            coins.remove(coin) # from the list
-            score+=1
-            coin_sound.play()
-    # print("Score : " + str(score))
-
-    # see if the player has hit an enemy
-    for enemy in enemies:
-        if enemy.colliderect(player_rect):
-            lives-=1
-            hit_damage_sound.play()
-            # reset player position
-            player_x = 300
-            player_y = 0
-            player_speed = 0
-    # print("Lives : " + str(lives))
+        # see if any coins have been collected
+        player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+        for coin in coins:
+            if coin.colliderect(player_rect):
+                coins.remove(coin) # from the list
+                score+=1
+                coin_sound.play()
+                # win if the score is 10
+                if score >= 10:
+                    game_state = "win" 
+                
+        # see if the player has hit an enemy
+        for enemy in enemies:
+            if enemy.colliderect(player_rect):
+                lives-=1
+                hit_damage_sound.play()
+                # reset player position
+                player_x = 300
+                player_y = 0
+                player_speed = 0
+                # change the game state
+                if lives <= 0:
+                    game_state = "lose"
 
     # ----
     # DRAW
     # ----
-    
     # background
     screen.fill(DARK_GREY)
-    # platforms
-    for p in platforms:
-        pygame.draw.rect(screen, (MUSTARD), p)
-    
-    # player
-    screen.blit(player_image, (player_x, player_y))
-    # player rect
-    pygame.draw.rect(screen, (255, 0, 0), (player_x, player_y, player_width, player_height), 1)
+        
+    if game_state == "playing":
+        # platforms
+        for p in platforms:
+            pygame.draw.rect(screen, (MUSTARD), p)
+        
+        # player
+        screen.blit(player_image, (player_x, player_y))
+        # player rect
+        pygame.draw.rect(screen, (255, 0, 0), (player_x, player_y, player_width, player_height), 1)
 
-    # coins
-    for coin in coins:
-        float_offset = math.sin(pygame.time.get_ticks() / 500) * 2.5
-        screen.blit(coin_images[coin_frame], (coin[0], coin[1] + float_offset))
+        # coins
+        for coin in coins:
+            float_offset = math.sin(pygame.time.get_ticks() / 500) * 2.5
+            screen.blit(coin_images[coin_frame], (coin[0], coin[1] + float_offset))
 
-    # coin animation timing
-    coin_frame_timer += 1
-    if coin_frame_timer >= 4:
-        coin_frame = (coin_frame + 1) % len(coin_images)
-        coin_frame_timer = 0
+        # coin animation timing
+        coin_frame_timer += 1
+        if coin_frame_timer >= 4:
+            coin_frame = (coin_frame + 1) % len(coin_images)
+            coin_frame_timer = 0
 
-    # enemies
-    for enemy in enemies:
-        screen.blit(enemy_image, (enemy.x, enemy.y))
+        # enemies
+        for enemy in enemies:
+            screen.blit(enemy_image, (enemy.x, enemy.y))
+
+        # player informations
+        # lives
+        for i in range(lives):
+            screen.blit(heart_image_32, (10 + i * (heart_image_32.get_width() + 5), 10))
+
+        # score
+        drawText("Score: " + str(score), WIDTH - 10, 10, "topright")
+
+    if game_state == "win":
+        # settings
+        overlay = pygame.Surface((WIDTH, HEIGHT))
+        overlay.set_alpha(180)
+        overlay.fill(DARK_GREY)
+        screen.blit(overlay, (0, 0))
+        # draw win text
+        drawText("YOU WIN!", WIDTH // 2, HEIGHT // 2, "center")
+    if game_state == "lose":
+        # settings
+        overlay = pygame.Surface((WIDTH, HEIGHT))
+        overlay.set_alpha(180)
+        overlay.fill(DARK_GREY)
+        screen.blit(overlay, (0, 0))
+        # draw lose text
+        drawText("GAME OVER", WIDTH // 2, HEIGHT // 2, "center")
 
     # flip
     pygame.display.flip()
-
     clock.tick(60)
 
 # quit
