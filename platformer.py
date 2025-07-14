@@ -5,6 +5,7 @@
 # https://opengameart.org/content/rotating-coin-0
 
 import pygame
+import math
 
 # constant variables
 WIDTH = 700
@@ -56,8 +57,12 @@ coin_images = [
     pygame.image.load(f"assets/images/bonus/coins/coin{i}.png") for i in range(6)
     ]
 coins = [
-    pygame.Rect(108, 200, 23, 23),
-    pygame.Rect(200, 250, 23, 23)
+    pygame.Rect(200, 250, 23, 23),
+    pygame.Rect(460, 220, 23, 23),   # au-dessus plateforme droite
+    pygame.Rect(120, 220, 23, 23),   # au-dessus plateforme gauche
+    pygame.Rect(WIDTH - 100, HEIGHT - 200, 23, 23),  # sur plateforme tout en haut à droite
+    pygame.Rect(WIDTH - 80, HEIGHT - 230, 23, 23),   # encore plus haut
+    pygame.Rect(WIDTH - 60, HEIGHT - 260, 23, 23),   # dernier saut difficile
 ]
 
 coin_frame = 0
@@ -161,7 +166,8 @@ while running:
 
     # coins
     for coin in coins:
-        screen.blit(coin_images[coin_frame], (coin[0], coin[1]))
+        float_offset = math.sin(pygame.time.get_ticks() / 500) * 2.5
+        screen.blit(coin_images[coin_frame], (coin[0], coin[1] + float_offset))
 
     # coin animation timing
     coin_frame_timer += 1
