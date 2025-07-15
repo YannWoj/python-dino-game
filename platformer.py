@@ -1,13 +1,16 @@
 # Dinosaur player images by Arks
 # https://arks.itch.io/dino-characters
 # X account : @ScissorMarks
-# Coin sprite bt DasBilligeAlien
+# Coin sprite by DasBilligeAlien
 # https://opengameart.org/content/rotating-coin-0
 # Spike sprites by bevouliin.com
 # https://opengameart.org/content/bevouliin-free-ingame-items-spike-monsters
 
 import pygame
 import math
+import engine
+from constants import WIDTH, HEIGHT, DARK_GREY, MUSTARD
+
 
 def drawText(text_to_draw, x, y, align="topleft"):
     text = font.render(text_to_draw, True, MUSTARD, DARK_GREY)
@@ -16,25 +19,20 @@ def drawText(text_to_draw, x, y, align="topleft"):
     screen.blit(text, text_rect)
 
 def create_coins():
-    return [
-        pygame.Rect(220, 260, 23, 23),
-        pygame.Rect(460, 220, 23, 23),
-        pygame.Rect(120, 220, 23, 23),
-        pygame.Rect(WIDTH - 100, HEIGHT - 200, 23, 23),
-        pygame.Rect(WIDTH - 80, HEIGHT - 230, 23, 23),
-        pygame.Rect(WIDTH - 60, HEIGHT - 260, 23, 23),
-        pygame.Rect(150 + 16, HEIGHT - 90, 23, 23),
-        pygame.Rect(400 + 16, HEIGHT - 90, 23, 23),
-        pygame.Rect(290, HEIGHT - 130, 23, 23),
-        pygame.Rect(38, (HEIGHT // 2) + 50, 23, 23),
-        pygame.Rect(58, (HEIGHT // 2) + 50, 23, 23),
+    positions = [
+        (220, 260),
+        (460, 220),
+        (120, 220),
+        (WIDTH - 100, HEIGHT - 200),
+        (WIDTH - 80, HEIGHT - 230),
+        (WIDTH - 60, HEIGHT - 260),
+        (150 + 16, HEIGHT - 90),
+        (400 + 16, HEIGHT - 90),
+        (290, HEIGHT - 130),
+        (38, (HEIGHT // 2) + 50),
+        (58, (HEIGHT // 2) + 50),
     ]
-
-# constant variables
-WIDTH = 700
-HEIGHT = 500
-DARK_GREY = (50, 50, 50)
-MUSTARD = (209, 206, 25)
+    return [engine.Coin(x, y, coin_frames) for x, y in positions]
 
 # init
 pygame.init()
@@ -95,12 +93,18 @@ platforms = [
 ]
 
 # coins
-coin_images = [
-    pygame.image.load(f"assets/images/bonus/coins/coin{i}.png") for i in range(6)
-    ]
+coin_image = pygame.image.load("assets/images/bonus/coins/coin0.png")
+
+coin_frames = [
+    pygame.image.load("assets/images/bonus/coins/coin0.png"),
+    pygame.image.load("assets/images/bonus/coins/coin1.png"),
+    pygame.image.load("assets/images/bonus/coins/coin2.png"),
+    pygame.image.load("assets/images/bonus/coins/coin3.png"),
+    pygame.image.load("assets/images/bonus/coins/coin4.png"),
+    pygame.image.load("assets/images/bonus/coins/coin5.png"),
+]
+
 coins = create_coins()
-coin_frame = 0
-coin_frame_timer = 0
 
 # enemies
 enemy_image = pygame.image.load("assets/images/enemies/spikes/spike_monster_B.png")
@@ -205,7 +209,7 @@ while running:
         player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
         
         for coin in coins[:]:
-            if coin.colliderect(player_rect):
+            if coin.rect.colliderect(player_rect):
                 coins.remove(coin)  # from the list
                 score += 1
                 coins_for_life += 1 
@@ -214,6 +218,7 @@ while running:
                 if coins_for_life >= 10:
                     lives += 1
                     coins_for_life = 0
+                    hearts = 3
                     extra_life_sound.play()
                 # win if all coins are collected
                 if len(coins) == 0:
@@ -262,15 +267,7 @@ while running:
 
         # coins
         for coin in coins:
-            float_offset = math.sin(pygame.time.get_ticks() / 500) * 2.5
-            screen.blit(coin_images[coin_frame], (coin[0], coin[1] + float_offset))
-
-        # coin animation timing
-        coin_frame_timer += 1
-        if coin_frame_timer >= 4:
-            coin_frame = (coin_frame + 1) % len(coin_images)
-            coin_frame_timer = 0
-
+            coin.draw(screen)
         # enemies
         for enemy in enemies:
             screen.blit(enemy_image, (enemy.x, enemy.y))
@@ -299,7 +296,6 @@ while running:
             screen.blit(heart_image_32, (heart_x, icon_y))
 
         # score
-        coin_image = coin_images[0]
         coin_rect = coin_image.get_rect()
 
         score_text = str(coins_for_life)
@@ -348,7 +344,7 @@ while running:
             coins = create_coins() # adding back the coins if we lose a life
             game_state = "playing"
     elif game_state == "lose":
-        if not sound_played and pygame.time.get_ticks() - life_lost_time >= 1000:
+        if not sound_played:
             game_over_sound.play()
             sound_played = True
         # settings

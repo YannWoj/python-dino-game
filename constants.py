@@ -1,0 +1,5 @@
+# constant variables
+WIDTH = 700
+HEIGHT = 500
+DARK_GREY = (50, 50, 50)
+MUSTARD = (209, 206, 25)
