@@ -119,7 +119,7 @@ lives_image = pygame.image.load("assets/images/bonus/lives/lives.png")
 score = 0
 lives = 3
 hearts = 3
-last_extra_life_score = 0
+coins_for_life = 0
 level_completed_played = False
 win_time = 0
 life_lost_time = 0
@@ -200,15 +200,17 @@ while running:
 
         # see if any coins have been collected
         player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
-        for coin in coins:
+        
+        for coin in coins[:]:
             if coin.colliderect(player_rect):
                 coins.remove(coin)  # from the list
                 score += 1
+                coins_for_life += 1 
                 coin_sound.play()
                 # gives a life every 10 coins
-                if score % 10 == 0 and score != last_extra_life_score:
+                if coins_for_life >= 10:
                     lives += 1
-                    last_extra_life_score = score
+                    coins_for_life = 0
                     extra_life_sound.play()
                 # win if all coins are collected
                 if len(coins) == 0:
@@ -231,6 +233,7 @@ while running:
                         else:
                             hearts = 3
                             lose_life_sound.play()
+                            coins_for_life = 0
                             game_state = "life_lost"
                             life_lost_time = pygame.time.get_ticks()
                 break
@@ -295,7 +298,7 @@ while running:
         coin_image = coin_images[0]
         coin_rect = coin_image.get_rect()
 
-        score_text = str(score)
+        score_text = str(coins_for_life)
         score_width, _ = font.size(score_text)
 
         coin_x = WIDTH - coin_rect.width - 10
