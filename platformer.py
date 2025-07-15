@@ -60,6 +60,9 @@ level_completed_sound = pygame.mixer.Sound("assets/sounds/level_completed/level_
 lose_life_sound = pygame.mixer.Sound("assets/sounds/fails/lose_life/lose_life.wav")
 # extra life
 extra_life_sound = pygame.mixer.Sound("assets/sounds/bonus/extra_life/extra_life.wav")
+# game over
+game_over_sound = pygame.mixer.Sound("assets/sounds/fails/game_over/game_over.wav")
+game_over_sound.set_volume(0.33)
 
 # player
 player_image = pygame.image.load("assets/images/characters/vita_00.png")
@@ -120,7 +123,7 @@ score = 0
 lives = 3
 hearts = 3
 coins_for_life = 0
-level_completed_played = False
+sound_played = False
 win_time = 0
 life_lost_time = 0
 last_hit_time = 0
@@ -230,6 +233,7 @@ while running:
                         lives -= 1
                         if lives <= 0:
                             game_state = "lose"
+                            game_over_sound.play()
                         else:
                             hearts = 3
                             lose_life_sound.play()
@@ -313,10 +317,9 @@ while running:
 
 
     if game_state == "win":
-        # Play the win sound ONLY ONCE when entering the "win" state
-        if not level_completed_played and pygame.time.get_ticks() - win_time > 95:
+        if not sound_played and pygame.time.get_ticks() - win_time > 95:
             level_completed_sound.play()
-            level_completed_played = True
+            sound_played = True
         # settings
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.set_alpha(180)
@@ -345,6 +348,9 @@ while running:
             coins = create_coins() # adding back the coins if we lose a life
             game_state = "playing"
     elif game_state == "lose":
+        if not sound_played and pygame.time.get_ticks() - life_lost_time >= 1000:
+            game_over_sound.play()
+            sound_played = True
         # settings
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.set_alpha(180)
