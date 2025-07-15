@@ -39,6 +39,10 @@ coin_sound = pygame.mixer.Sound("assets/sounds/bonus/coins/coin_sound.wav")
 hit_damage_sound = pygame.mixer.Sound("assets/sounds/damages/hit-damage.wav")
 # jump
 jump_sound = pygame.mixer.Sound("assets/sounds/jumps/player_jump.wav")
+# level completed
+level_completed_sound = pygame.mixer.Sound("assets/sounds/level_completed/level_completed.wav")
+# losing a life
+lose_life_sound = pygame.mixer.Sound("assets/sounds/fails/lose_life/lose_life.wav")
 
 # player
 player_image = pygame.image.load("assets/images/characters/vita_00.png")
@@ -52,6 +56,7 @@ player_width = 45
 player_height = 51
 
 player_on_ground = False
+player_direction = "right"
 
 # platforms
 platforms = [
@@ -105,6 +110,8 @@ heart_image_32 = pygame.image.load("assets/images/bonus/hearts/heart_32x32.png")
 # score & life
 score = 0
 lives = 3
+level_completed_played = False
+win_time = 0
 
 running = True
 while running:
@@ -129,8 +136,10 @@ while running:
 
         if keys[pygame.K_LEFT]:
             new_player_x -= 5
+            player_direction = "left"
         if keys[pygame.K_RIGHT]:
             new_player_x += 5
+            player_direction = "right"
         if keys[pygame.K_SPACE] and player_on_ground:
             player_speed = -8.75
             jump_sound.play()
@@ -189,7 +198,8 @@ while running:
                 coin_sound.play()
                 # win if the score is 10
                 if score >= 10:
-                    game_state = "win" 
+                    game_state = "win"
+                    win_time = pygame.time.get_ticks() # Record the time when the player wins
                 
         # see if the player has hit an enemy
         for enemy in enemies:
@@ -203,7 +213,6 @@ while running:
                 # change the game state
                 if lives <= 0:
                     game_state = "lose"
-
     # ----
     # DRAW
     # ----
@@ -216,7 +225,10 @@ while running:
             pygame.draw.rect(screen, (MUSTARD), p)
         
         # player
-        screen.blit(player_image, (player_x, player_y))
+        if player_direction == "right":
+            screen.blit(player_image, (player_x, player_y))
+        elif player_direction == "left":
+            screen.blit(pygame.transform.flip(player_image, True, False), (player_x, player_y))
         # player rect
         pygame.draw.rect(screen, (255, 0, 0), (player_x, player_y, player_width, player_height), 1)
 
@@ -244,6 +256,10 @@ while running:
         drawText("Score: " + str(score), WIDTH - 10, 10, "topright")
 
     if game_state == "win":
+        # Play the win sound ONLY ONCE when entering the "win" state
+        if not level_completed_played and pygame.time.get_ticks() - win_time > 95:
+            level_completed_sound.play()
+            level_completed_played = True
         # settings
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.set_alpha(180)
