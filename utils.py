@@ -2,12 +2,15 @@
 import pygame
 from constants import MUSTARD, DARK_GREY, WIDTH, HEIGHT
 
+
+# draw text on screen
 def drawText(screen, font, text_to_draw, x, y, align="topleft"):
     text = font.render(text_to_draw, True, MUSTARD, DARK_GREY)
     text_rect = text.get_rect()
     setattr(text_rect, align, (x, y))
     screen.blit(text, text_rect)
 
+# create coins at fixed positions
 def create_coins(engine, coin_frames):
     positions = [
         (220, 260),

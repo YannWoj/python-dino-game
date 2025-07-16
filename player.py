@@ -23,7 +23,7 @@ class Player:
             flipped_image = pygame.transform.flip(self.image, True, False)
             screen.blit(flipped_image, (self.x, self.y))
 
-        # Optional: draw red collision rectangle
+        # draw red collision rectangle for the player (to delete later)
         pygame.draw.rect(screen, (255, 0, 0), self.get_rect(), 1)
 
     def update(self, platforms):

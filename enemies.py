@@ -2,6 +2,7 @@
 import pygame
 from constants import HEIGHT
 
+# returns a list of enemy hitboxes
 def get_enemies():
     return [
         pygame.Rect(150, 274, 50, 26),
