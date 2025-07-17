@@ -1,6 +1,7 @@
 # player.py
 import pygame
 import engine
+from images import jump_image
 
 class Player:
     def __init__(self, x=300, y=0):
@@ -8,12 +9,13 @@ class Player:
         self.x = float(x)
         self.y = float(y)
         self.speed = 0.0
-        self.acceleration = 0.35
+        self.acceleration = 0.33
         self.width = 45
         self.height = 51
         self.on_ground = False
         self.direction = "right"
         self.state = "idle" # or "walking"
+        self.hurt_timer = 0
         self.animations = { 
                            "idle" : engine.Animation([
                                     pygame.image.load("assets/images/characters/vita_00.png"),
@@ -28,17 +30,23 @@ class Player:
                                     pygame.image.load("assets/images/characters/vita_07.png"),
                                     pygame.image.load("assets/images/characters/vita_08.png"),
                                     pygame.image.load("assets/images/characters/vita_09.png"),
-                           ])
+                                ]),
+                           "hurt" : engine.Animation([
+                                pygame.image.load("assets/images/characters/vita_14.png"),
+                                pygame.image.load("assets/images/characters/vita_15.png"),
+                                pygame.image.load("assets/images/characters/vita_16.png")
+                                ])
                            }
-
     def get_rect(self):
         return pygame.Rect(int(self.x), int(self.y), self.width, self.height)
 
     def draw(self, screen):
-        current_animation = self.animations[self.state]
-        current_animation.update()
-        
-        frame = current_animation.imageList[current_animation.imageIndex]
+        if self.state == "jumping":
+            frame = jump_image
+        else:
+            current_animation = self.animations[self.state]
+            current_animation.update()
+            frame = current_animation.imageList[current_animation.imageIndex]
         
         if self.direction == "right":
             screen.blit(frame, (int(self.x), int(self.y)))
@@ -67,6 +75,17 @@ class Player:
                 break
         else:
             self.y = new_y
+
+        # check if player is hurt and enough time has passed
+        if self.state == "hurt":
+            if pygame.time.get_ticks() - self.hurt_timer > 1000:  # 1 seconde
+                self.state = "idle"
+
+        # set state to jumping if the player is in the air and going up
+        if not self.on_ground and self.speed < 0:
+            self.state = "jumping"
+        elif self.on_ground and self.state == "jumping":
+            self.state = "idle"
 
     # moving to the left
     def move_left(self):

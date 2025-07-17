@@ -16,9 +16,13 @@ from player import Player
 from levels.level_0 import get_platforms
 from enemies import get_enemies
 from sound import load_sounds
-from images import coin_frames, coin_image, enemy_image, heart_image_32, lives_image
+from images import coin_frames, coin_image, enemy_image, heart_image_16,heart_image_32, lives_image
 from init_game import init
 from utils import drawText, create_coins
+from collectibles.coin_collectible import Coin
+from collectibles.life_collectible import Life
+from collectibles.heart_collectible import Heart
+from utils import create_coins, create_lives, create_hearts
 
 # init
 screen, clock, font = init()
@@ -52,6 +56,12 @@ coins = create_coins(engine, coin_frames)
 # enemies
 enemies = get_enemies()
 
+# life collectibles
+life_collectibles = create_lives(lives_image)
+
+# heart collectibles
+hearts_collectibles = create_hearts(heart_image_16) 
+
 running = True
 while running:
 # game loop
@@ -73,22 +83,25 @@ while running:
         # player input
         keys = pygame.key.get_pressed() # Held (maintenues) keys (True/False)
 
-        if keys[pygame.K_LEFT]:
-            new_player_x -= 3.5
-            player.direction = "left"
-            player.state = "walking"
-        if keys[pygame.K_RIGHT]:
-            new_player_x += 3.5
-            player.direction = "right"
-            player.state = "walking"
-        if not keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
-            player.state = "idle"
-        if keys[pygame.K_SPACE] and player.on_ground:
-            player.jump()
-            sounds["jump"].play()
-        print(player.state)
-            
-        player.update(platforms)
+        if player.state != "hurt":
+            if keys[pygame.K_LEFT]:
+                new_player_x -= 4.20
+                player.direction = "left"
+                player.state = "walking"
+            if keys[pygame.K_RIGHT]:
+                new_player_x += 4.20
+                player.direction = "right"
+                player.state = "walking"
+            if not keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
+                player.state = "idle"
+            if keys[pygame.K_SPACE] and player.on_ground:
+                player.jump()
+                sounds["jump"].play()
+        else:
+            if player.direction == "right":
+                new_player_x -= 1.2  # knockback
+            else:
+                new_player_x += 1.2
 
     # ------
     # UPDATE
@@ -109,6 +122,14 @@ while running:
         if not x_collision:
             player.x = new_player_x
 
+        # update
+        player.update(platforms)
+
+        # recover from hurt state after 300ms
+        if player.state == "hurt":
+            if pygame.time.get_ticks() - player.hurt_timer >= 200:
+                player.state = "idle"
+
         # see if any coins have been collected
         player_rect = pygame.Rect(player.x, player.y, player.width, player.height)
         
@@ -127,7 +148,22 @@ while running:
                 # win if all coins are collected
                 if len(coins) == 0:
                     game_state = "win"
-                    win_time = pygame.time.get_ticks()  # Record the time when the player wins
+                    win_time = pygame.time.get_ticks()  # record the time when the player wins
+    
+        # see if any life has been collected
+        for life in life_collectibles[:]:
+            if life.rect.colliderect(player_rect):
+                life_collectibles.remove(life)
+                sounds["extra_life"].play()
+                lives += 1
+                hearts = 3
+
+        # see if any hearts have been collected
+        for heart in hearts_collectibles[:]:
+            if heart.rect.colliderect(player_rect):
+                hearts_collectibles.remove(heart)
+                sounds["heart_pickup"].play()  # à condition que ce son soit chargé
+                hearts = min(hearts + 1, 3)
                 
         # see if the player has hit an enemy
         for enemy in enemies:
@@ -138,6 +174,9 @@ while running:
                     last_hit_time = current_time
                     hearts -= 1
                     sounds["hit"].play()
+
+                    player.state = "hurt"
+                    player.hurt_timer = pygame.time.get_ticks()
                     if hearts <= 0:
                         lives -= 1
                         if lives <= 0:
@@ -163,13 +202,18 @@ while running:
         
         # player
         player.draw(screen)
-
         # coins
         for coin in coins:
             coin.draw(screen)
+        # lives
+        for life in life_collectibles:
+            life.draw(screen)
         # enemies
         for enemy in enemies:
             screen.blit(enemy_image, (enemy.x, enemy.y))
+        # hearts
+        for heart in hearts_collectibles:
+            heart.draw(screen)
 
         # player informations
         # lives icon with count

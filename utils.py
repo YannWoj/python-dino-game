@@ -1,7 +1,7 @@
 # utils.py
 import pygame
 from constants import MUSTARD, DARK_GREY, WIDTH, HEIGHT
-
+from collectibles.heart_collectible import Heart
 
 # draw text on screen
 def drawText(screen, font, text_to_draw, x, y, align="topleft"):
@@ -26,3 +26,19 @@ def create_coins(engine, coin_frames):
         (58, (HEIGHT // 2) + 50),
     ]
     return [engine.Coin(x, y, coin_frames) for x, y in positions]
+
+# create lives
+def create_lives(image):
+    positions = [
+        (30, 90),
+    ]
+    from collectibles.life_collectible import Life
+    return [Life(x, y, image) for x, y in positions]
+
+def create_hearts(heart_image):
+    positions = [
+        (100, 150),
+        (300, 250),
+        (500, 180)
+    ]
+    return [Heart(x, y, heart_image) for x, y in positions]
