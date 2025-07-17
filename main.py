@@ -6,7 +6,7 @@
 # Spike sprites by bevouliin.com
 # https://opengameart.org/content/bevouliin-free-ingame-items-spike-monsters
 
-# main
+# main.py
 # imports
 import pygame
 import math
@@ -37,7 +37,7 @@ win_time = 0
 life_lost_time = 0
 last_hit_time = 0
 
-# games states = playing // win // lose
+# game states = playing // win // lose
 game_state = 'playing'
 
 # sounds
@@ -223,19 +223,25 @@ while running:
         # draw the player face icon (number of lives)
         screen.blit(lives_image, (icon_x, icon_y))
 
-        # draw the "x N" next to the face icon
-        text_x = icon_x + lives_image.get_width() + 5
-        text_y = icon_y + 5
-        text_str = f"x {lives}"
-        drawText(screen, font, text_str, text_x, text_y, align="topleft")
+        # Y position for vertical alignment of text with the icon
+        text_y = icon_y + (lives_image.get_height() - font.get_height()) // 2
 
-        # calculate text width to place hearts after it
-        text_surface = font.render(text_str, True, MUSTARD)
-        text_width = text_surface.get_width()
+        # "x" symbol
+        x_surface = font.render("x", True, MUSTARD)
+        x_x = icon_x + lives_image.get_width() + 10  # 2px after the icon
+        screen.blit(x_surface, (x_x, text_y))
 
-        # draw hearts next to the text
+        # number of lives
+        lives_surface = font.render(str(lives), True, MUSTARD)
+        lives_x = x_x + x_surface.get_width() + 6  # 6px after the "x"
+        screen.blit(lives_surface, (lives_x, text_y))
+
+        # total width of "x" + "lives"
+        text_total_width = lives_x + lives_surface.get_width() - icon_x
+
+        # draw heart icons (for current health)
         for i in range(hearts):
-            heart_x = text_x + text_width + 15 + i * (heart_image_32.get_width() + 5)
+            heart_x = icon_x + text_total_width + 15 + i * (heart_image_32.get_width() + 5)
             screen.blit(heart_image_32, (heart_x, icon_y))
 
         # score

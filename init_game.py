@@ -8,5 +8,5 @@ def init():
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Platformer")
     clock = pygame.time.Clock()
-    font = pygame.font.Font(pygame.font.get_default_font(), 24)
+    font = pygame.font.Font("assets/fonts/ARCADE_N.TTF", 24)
     return screen, clock, font

@@ -9,7 +9,7 @@ class Player:
         self.x = float(x)
         self.y = float(y)
         self.speed = 0.0
-        self.acceleration = 0.33
+        self.acceleration = 0.35
         self.width = 45
         self.height = 51
         self.on_ground = False
