@@ -12,4 +12,5 @@ def get_platforms():
         pygame.Rect(WIDTH - 120, HEIGHT - 130, 50, 30),
         pygame.Rect(WIDTH - 95, HEIGHT - 155, 50, 30),
         pygame.Rect(WIDTH - 70, HEIGHT - 180, 50, 30),
+        pygame.Rect(WIDTH - 150, HEIGHT - 110, 50, 30),
     ]

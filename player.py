@@ -1,27 +1,50 @@
 # player.py
 import pygame
+import engine
 
 class Player:
     def __init__(self, x=300, y=0):
         self.image = pygame.image.load("assets/images/characters/vita_00.png")
-        self.x = x
-        self.y = y
+        self.x = float(x)
+        self.y = float(y)
         self.speed = 0.0
         self.acceleration = 0.35
         self.width = 45
         self.height = 51
         self.on_ground = False
         self.direction = "right"
+        self.state = "idle" # or "walking"
+        self.animations = { 
+                           "idle" : engine.Animation([
+                                    pygame.image.load("assets/images/characters/vita_00.png"),
+                                    pygame.image.load("assets/images/characters/vita_01.png"),
+                                    pygame.image.load("assets/images/characters/vita_02.png"),
+                                    pygame.image.load("assets/images/characters/vita_03.png")
+                                ]),
+                           "walking" : engine.Animation([
+                                    pygame.image.load("assets/images/characters/vita_04.png"),
+                                    pygame.image.load("assets/images/characters/vita_05.png"),
+                                    pygame.image.load("assets/images/characters/vita_06.png"),
+                                    pygame.image.load("assets/images/characters/vita_07.png"),
+                                    pygame.image.load("assets/images/characters/vita_08.png"),
+                                    pygame.image.load("assets/images/characters/vita_09.png"),
+                           ])
+                           }
 
     def get_rect(self):
-        return pygame.Rect(self.x, self.y, self.width, self.height)
+        return pygame.Rect(int(self.x), int(self.y), self.width, self.height)
 
     def draw(self, screen):
+        current_animation = self.animations[self.state]
+        current_animation.update()
+        
+        frame = current_animation.imageList[current_animation.imageIndex]
+        
         if self.direction == "right":
-            screen.blit(self.image, (self.x, self.y))
+            screen.blit(frame, (int(self.x), int(self.y)))
         else:
-            flipped_image = pygame.transform.flip(self.image, True, False)
-            screen.blit(flipped_image, (self.x, self.y))
+            flipped_frame = pygame.transform.flip(frame, True, False)
+            screen.blit(flipped_frame, (self.x, self.y))
 
         # draw red collision rectangle for the player (to delete later)
         pygame.draw.rect(screen, (255, 0, 0), self.get_rect(), 1)
@@ -45,13 +68,14 @@ class Player:
         else:
             self.y = new_y
 
+    # moving to the left
     def move_left(self):
         self.x -= 5
         self.direction = "left"
-
+    # moving to the right
     def move_right(self):
         self.x += 5
         self.direction = "right"
-
+    # jumping
     def jump(self):
-        self.speed = -9
+        self.speed = -8.5

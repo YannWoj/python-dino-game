@@ -6,6 +6,8 @@
 # Spike sprites by bevouliin.com
 # https://opengameart.org/content/bevouliin-free-ingame-items-spike-monsters
 
+# main
+# imports
 import pygame
 import math
 import engine
@@ -72,14 +74,19 @@ while running:
         keys = pygame.key.get_pressed() # Held (maintenues) keys (True/False)
 
         if keys[pygame.K_LEFT]:
-            new_player_x -= 5
+            new_player_x -= 3.5
             player.direction = "left"
+            player.state = "walking"
         if keys[pygame.K_RIGHT]:
-            new_player_x += 5
+            new_player_x += 3.5
             player.direction = "right"
+            player.state = "walking"
+        if not keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
+            player.state = "idle"
         if keys[pygame.K_SPACE] and player.on_ground:
             player.jump()
             sounds["jump"].play()
+        print(player.state)
             
         player.update(platforms)
 
@@ -155,12 +162,7 @@ while running:
             pygame.draw.rect(screen, (MUSTARD), p)
         
         # player
-        if player.direction == "right":
-            screen.blit(player.image, (player.x, player.y))
-        elif player.direction == "left":
-            screen.blit(pygame.transform.flip(player.image, True, False), (player.x, player.y))
-        # player rect
-        pygame.draw.rect(screen, (255, 0, 0), (player.x, player.y, player.width, player.height), 1)
+        player.draw(screen)
 
         # coins
         for coin in coins:
