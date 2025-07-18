@@ -11,4 +11,5 @@ def load_sounds():
         "extra_life": pygame.mixer.Sound("assets/sounds/bonus/extra_life/extra_life.wav"),
         "game_over": pygame.mixer.Sound("assets/sounds/fails/game_over/game_over.wav"),
         "heart_pickup": pygame.mixer.Sound("assets/sounds/bonus/hearts/hearts.wav"),
+        "home_select": pygame.mixer.Sound("assets/sounds/menu/home_select.wav")
     }

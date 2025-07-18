@@ -15,8 +15,8 @@ from constants import WIDTH, HEIGHT, DARK_GREY, MUSTARD, FPS
 from player import Player
 from levels.level_0 import get_platforms
 from enemies import get_enemies
-from sound import load_sounds
-from images import coin_frames, coin_image, enemy_image, heart_image_16,heart_image_32, lives_image
+from sounds import load_sounds
+from images import coin_frames, coin_image, enemy_image, heart_image_16,heart_image_32, lives_image, title_image
 from init_game import init
 from utils import drawText, create_coins
 from collectibles.coin_collectible import Coin
@@ -36,13 +36,15 @@ sound_played = False
 win_time = 0
 life_lost_time = 0
 last_hit_time = 0
+transition_timer = 0
 
-# game states = playing // win // lose
-game_state = 'playing'
+# game states = home // transition_to_play // playing // win // lose
+game_state = 'home'
 
 # sounds
 sounds = load_sounds()
 sounds["game_over"].set_volume(0.33)
+sounds["home_select"].set_volume(0.5)
 
 # player
 player = Player()
@@ -70,18 +72,33 @@ while running:
     # INPUT
     # -----
 
+     # player input
+    keys = pygame.key.get_pressed() # Held (maintenues) keys (True/False)
+
     # check for quit
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
+        # when space is pressed on the home screen, start the transition phase
+        if game_state == "home" and event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                sounds["home_select"].play()
+                game_state = "transition_to_play"
+                transition_timer = pygame.time.get_ticks()
+                
+        # handle the transition screen
+    if game_state == "transition_to_play":
+        screen.fill(DARK_GREY)
+        drawText(screen, font, "Get Ready...", WIDTH // 2, HEIGHT // 2, align="center")
+        if pygame.time.get_ticks() - transition_timer >= 1000:
+                        game_state = "playing"
 
     # simulating x and y positions
     new_player_x = player.x
     new_player_y = player.y
 
     if game_state == "playing":
-        # player input
-        keys = pygame.key.get_pressed() # Held (maintenues) keys (True/False)
 
         if player.state != "hurt":
             if keys[pygame.K_LEFT]:
@@ -193,9 +210,21 @@ while running:
     # DRAW
     # ----
     # background
-    screen.fill(DARK_GREY)
+    
+    if game_state == "home":
+        screen.fill(DARK_GREY)
+
+        # draw
+        title_x = (WIDTH - title_image.get_width()) // 2
+        title_y = HEIGHT // 4 - 50
+
+        screen.blit(title_image, (title_x, title_y))
+        # make the "Press SPACE to Start" text blink
+        if (pygame.time.get_ticks() // 420) % 2 == 0:
+            drawText(screen, font, "Press SPACE to Start", WIDTH // 2, HEIGHT // 2 + 115, align="center")
         
     if game_state == "playing":
+        screen.fill(DARK_GREY)
         # platforms
         for p in platforms:
             pygame.draw.rect(screen, (MUSTARD), p)
@@ -223,10 +252,10 @@ while running:
         # draw the player face icon (number of lives)
         screen.blit(lives_image, (icon_x, icon_y))
 
-        # Y position for vertical alignment of text with the icon
+        # align text with icon
         text_y = icon_y + (lives_image.get_height() - font.get_height()) // 2
 
-        # "x" symbol
+        # draw "x"
         x_surface = font.render("x", True, MUSTARD)
         x_x = icon_x + lives_image.get_width() + 10  # 2px after the icon
         screen.blit(x_surface, (x_x, text_y))
@@ -262,6 +291,8 @@ while running:
 
 
     if game_state == "win":
+        screen.fill(DARK_GREY)
+        
         if not sound_played and pygame.time.get_ticks() - win_time > 95:
             sounds["level_completed"].play()
             sound_played = True
@@ -276,14 +307,41 @@ while running:
         # background color 
         screen.fill(DARK_GREY)
 
-        # display lives
-        icon_x = WIDTH // 2 - (lives_image.get_width() // 2 + 20)
-        icon_y = HEIGHT // 2 - lives_image.get_height() // 2
+        # render the text surfaces first to know their sizes
+        x_surface = font.render("x", True, MUSTARD)
+        lives_surface = font.render(str(lives), True, MUSTARD)
 
-        screen.blit(lives_image, (icon_x, icon_y))
+        # total width = image width + padding + x width + padding + lives width
+        total_width = lives_image.get_width() + 10 + x_surface.get_width() + 6 + lives_surface.get_width()
 
-        text_str = f"x {lives}"
-        drawText(screen, font, text_str, icon_x + lives_image.get_width() + 10, icon_y + 5, align="topleft")
+        # start x so that total is centered
+        start_x = (screen.get_width() - total_width) // 2
+
+        # total height = height of the lives image
+        total_height = lives_image.get_height()
+
+        # vertical start y to center the block vertically
+        start_y = (screen.get_height() - total_height) // 2
+
+        # position for the image
+        icon_y = start_y
+
+        # to center the text vertically (with the image)
+        text_y = icon_y + (lives_image.get_height() - font.get_height()) // 2
+
+        # draw the lives image
+        screen.blit(lives_image, (start_x, icon_y))
+
+        # calculate vertical center for the text
+        text_y = icon_y + (lives_image.get_height() - font.get_height()) // 2
+
+        x_surface = font.render("x", True, MUSTARD)
+        x_x = start_x + lives_image.get_width() + 10
+        screen.blit(x_surface, (x_x, text_y))
+
+        lives_surface = font.render(str(lives), True, MUSTARD)
+        lives_x = x_x + x_surface.get_width() + 6
+        screen.blit(lives_surface, (lives_x, text_y))
 
         # 2 seconds timer
         if pygame.time.get_ticks() - life_lost_time >= 2000:

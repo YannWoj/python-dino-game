@@ -1,6 +1,10 @@
 # images.py
 import pygame
 
+# title image
+title_image = pygame.image.load("assets/home_screen/dino-platformer.png")
+title_image = pygame.transform.scale(title_image, (625, 150))
+
 # coins animation frames
 coin_frames = [
     pygame.image.load("assets/images/bonus/coins/coin0.png"),
