@@ -13,7 +13,7 @@
 import pygame
 import math
 import engine
-from constants import WIDTH, HEIGHT, DARK_GREY, MUSTARD, FPS
+from constants import WIDTH, HEIGHT, DARK_GREY, MUSTARD, WHITE, LIGHT_GRAY, FPS
 from player import Player
 from levels.level_0 import get_platforms
 from enemies import get_enemies
@@ -277,12 +277,12 @@ while running:
         text_y = icon_y + (lives_image.get_height() - font.get_height()) // 2
 
         # draw "x"
-        x_surface = font.render("x", True, MUSTARD)
+        x_surface = font.render("x", True, WHITE)
         x_x = icon_x + lives_image.get_width() + 10  # 2px after the icon
         screen.blit(x_surface, (x_x, text_y))
 
         # number of lives
-        lives_surface = font.render(str(lives), True, MUSTARD)
+        lives_surface = font.render(str(lives), True, WHITE)
         lives_x = x_x + x_surface.get_width() + 6  # 6px after the "x"
         screen.blit(lives_surface, (lives_x, text_y))
 
@@ -307,7 +307,7 @@ while running:
         score_y = 10
 
         # draw score and coin icon
-        drawText(screen, font, score_text, score_x, score_y, align="topright")
+        drawText(screen, font, score_text, score_x, score_y, WHITE, align="topright")
         screen.blit(coin_image, (coin_x, coin_y))
 
         # Only win automatically by collecting coins in debug mode
