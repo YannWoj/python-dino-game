@@ -27,4 +27,5 @@ class Coin():
         self.animation = Animation(animation_frames)
 
     def draw(self, screen):
+        # draw the coin's current animation frame
         self.animation.draw(screen, self.rect.x, self.rect.y)

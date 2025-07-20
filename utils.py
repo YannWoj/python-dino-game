@@ -4,13 +4,13 @@ from constants import MUSTARD, DARK_GREY, WIDTH, HEIGHT
 from collectibles.heart_collectible import Heart
 
 # draw text on screen
-def drawText(screen, font, text_to_draw, x, y, align="topleft"):
-    text = font.render(text_to_draw, True, MUSTARD, DARK_GREY)
+def drawText(screen, font, text_to_draw, x, y, color=MUSTARD, align="topleft"): 
+    text = font.render(text_to_draw, True, color)
     text_rect = text.get_rect()
     setattr(text_rect, align, (x, y))
     screen.blit(text, text_rect)
 
-# create coins at fixed positions
+# create coins at predefined positions
 def create_coins(engine, coin_frames):
     positions = [
         (220, 260),
@@ -35,6 +35,7 @@ def create_lives(image):
     from collectibles.life_collectible import Life
     return [Life(x, y, image) for x, y in positions]
 
+# create hearts
 def create_hearts(heart_image):
     positions = [
         (100, 150),

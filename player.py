@@ -9,13 +9,14 @@ class Player:
         self.x = float(x)
         self.y = float(y)
         self.speed = 0.0
-        self.acceleration = 0.35
+        self.acceleration = 0.40 # gravity
         self.width = 45
         self.height = 51
         self.on_ground = False
         self.direction = "right"
         self.state = "idle" # or "walking"
         self.hurt_timer = 0
+        self.rect = pygame.Rect(int(self.x), int(self.y), self.width, self.height)
         self.animations = { 
                            "idle" : engine.Animation([
                                     pygame.image.load("assets/images/characters/vita_00.png"),
@@ -40,40 +41,65 @@ class Player:
     def get_rect(self):
         return pygame.Rect(int(self.x), int(self.y), self.width, self.height)
 
-    def draw(self, screen):
+    def draw(self, screen, camera=None):
         if self.state == "jumping":
             frame = jump_image
         else:
             current_animation = self.animations[self.state]
             current_animation.update()
             frame = current_animation.imageList[current_animation.imageIndex]
+            
+        # get the camera correction
+        if camera:
+            draw_rect = camera.apply(self.get_rect())
+            draw_pos = (draw_rect.x, draw_rect.y)
+        else:
+            draw_pos = (int(self.x), int(self.y))
         
         if self.direction == "right":
-            screen.blit(frame, (int(self.x), int(self.y)))
+            screen.blit(frame, draw_pos)
         else:
             flipped_frame = pygame.transform.flip(frame, True, False)
-            screen.blit(flipped_frame, (self.x, self.y))
+            screen.blit(flipped_frame, draw_pos)
 
         # draw red collision rectangle for the player (to delete later)
-        pygame.draw.rect(screen, (255, 0, 0), self.get_rect(), 1)
+        if camera:
+            pygame.draw.rect(screen, (255, 0, 0), camera.apply(self.get_rect()), 1)
+        else:
+            pygame.draw.rect(screen, (255, 0, 0), self.get_rect(), 1)
 
-    def update(self, platforms):
-        # applying gravity
-        self.speed += self.acceleration
-        new_y = self.y + self.speed
-
-        # checking vertical collisions
-        player_rect = pygame.Rect(self.x, new_y, self.width, self.height)
-        self.on_ground = False
+    def update(self, platforms: list, dx: float = 0, dy: float = 0):
+        # Tentative de déplacement horizontal
+        new_x = self.x + dx
+        player_rect = pygame.Rect(new_x, self.y, self.width, self.height)
+        collision_x = False
 
         for p in platforms:
             if p.colliderect(player_rect):
-                self.speed = 0
-                if p.top > self.y:  # platform below
+                collision_x = True
+                break
+
+        if not collision_x:
+            self.x = new_x
+
+        # Appliquer la gravité
+        self.speed += self.acceleration
+        new_y = self.y + self.speed + dy
+
+        player_rect = pygame.Rect(self.x, new_y, self.width, self.height)
+        self.on_ground = False
+        collision_y = False
+
+        for p in platforms:
+            if p.colliderect(player_rect):
+                collision_y = True
+                if self.speed >= 0 and self.y + self.height <= p.top + 10:
                     self.y = p.top - self.height
                     self.on_ground = True
+                    self.speed = 0
                 break
-        else:
+
+        if not collision_y:
             self.y = new_y
 
         # check if player is hurt and enough time has passed
@@ -86,6 +112,8 @@ class Player:
             self.state = "jumping"
         elif self.on_ground and self.state == "jumping":
             self.state = "idle"
+            
+        self.rect = self.get_rect()
 
     # moving to the left
     def move_left(self):
@@ -97,4 +125,4 @@ class Player:
         self.direction = "right"
     # jumping
     def jump(self):
-        self.speed = -8.5
+        self.speed = -8.4 # height of the jump

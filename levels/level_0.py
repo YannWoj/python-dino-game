@@ -1,8 +1,8 @@
-# level_0.py
+# levels/level_0.py, DEBUG
 import pygame
 from constants import WIDTH, HEIGHT
 
-# Returns the platforms for level 0
+# returns the platforms for level 0 (debug level)
 def get_platforms():
     return [
         pygame.Rect(100, 300, 400, 50),  # middle

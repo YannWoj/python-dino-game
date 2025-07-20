@@ -5,6 +5,8 @@
 # https://opengameart.org/content/rotating-coin-0
 # Spike sprites by bevouliin.com
 # https://opengameart.org/content/bevouliin-free-ingame-items-spike-monsters
+# Graphic images : "Pixel Adventure"
+# https://pixelfrog-assets.itch.io/pixel-adventure-1
 
 # main.py
 # imports
@@ -18,11 +20,14 @@ from enemies import get_enemies
 from sounds import load_sounds
 from images import coin_frames, coin_image, enemy_image, heart_image_16,heart_image_32, lives_image, title_image
 from init_game import init
-from utils import drawText, create_coins
 from collectibles.coin_collectible import Coin
 from collectibles.life_collectible import Life
 from collectibles.heart_collectible import Heart
-from utils import create_coins, create_lives, create_hearts
+from utils import drawText, create_coins, create_lives, create_hearts
+from level_loader import load_level, load_level_tmx
+from levels.level_0 import get_platforms as get_debug_platforms
+from levels.level_1 import get_platforms as get_tmx_platforms
+from camera import Camera
 
 # init
 screen, clock, font = init()
@@ -38,25 +43,33 @@ life_lost_time = 0
 last_hit_time = 0
 transition_timer = 0
 
-# game states = home // transition_to_play // playing // win // lose
+# game states = home // main_menu // transition_to_play // playing // win // lose
 game_state = 'home'
+is_debug = False
+menu_selection = 0
 
 # sounds
 sounds = load_sounds()
 sounds["game_over"].set_volume(0.33)
 sounds["home_select"].set_volume(0.5)
 
+# tiles
+tiles = []
+
 # player
 player = Player()
 
 # platforms
-platforms = get_platforms()
+platforms = []
 
 # coins
 coins = create_coins(engine, coin_frames)
 
 # enemies
 enemies = get_enemies()
+
+# camera
+camera = None
 
 # life collectibles
 life_collectibles = create_lives(lives_image)
@@ -80,132 +93,137 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        # when space is pressed on the home screen, start the transition phase
+        # when space is pressed on the home screen, go to the main menu
         if game_state == "home" and event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 sounds["home_select"].play()
-                game_state = "transition_to_play"
-                transition_timer = pygame.time.get_ticks()
+                game_state = "main_menu"
+
+        # handle navigation in the main menu
+        if game_state == "main_menu":
+            if event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_UP, pygame.K_w):
+                    menu_selection = (menu_selection - 1) % 2
+                if event.key in (pygame.K_DOWN, pygame.K_s):
+                    menu_selection = (menu_selection + 1) % 2
+                if event.key == pygame.K_RETURN:
+                    if menu_selection == 0:
+                        # load tmx level
+                        is_debug = False
+                        from level_loader import load_level
+                        platforms, coins, enemies, life_collectibles, hearts_collectibles, tiles = load_level("levels/tmx/level_1.tmx", coin_frames, lives_image, heart_image_16)
+                        camera = Camera(player, 4000, 512, WIDTH, HEIGHT)
+                        coins = []
+                        enemies = []
+                        life_collectibles = []
+                        hearts_collectibles = []
+                        game_state = "transition_to_play"
+                        transition_timer = pygame.time.get_ticks()
+                    elif menu_selection == 1:
+                        # debug mode
+                        is_debug = True
+                        from levels.level_0 import get_platforms as get_debug_platforms
+                        platforms = get_debug_platforms()
+                        coins = create_coins(engine, coin_frames)
+                        enemies = get_enemies()
+                        life_collectibles = create_lives(lives_image)
+                        hearts_collectibles = create_hearts(heart_image_16)
+                        game_state = "transition_to_play"
+                        transition_timer = pygame.time.get_ticks()
+
                 
-        # handle the transition screen
+    # handle the transition screen
     if game_state == "transition_to_play":
         screen.fill(DARK_GREY)
         drawText(screen, font, "Get Ready...", WIDTH // 2, HEIGHT // 2, align="center")
         if pygame.time.get_ticks() - transition_timer >= 1000:
                         game_state = "playing"
 
-    # simulating x and y positions
-    new_player_x = player.x
-    new_player_y = player.y
-
-    if game_state == "playing":
-
-        if player.state != "hurt":
-            if keys[pygame.K_LEFT]:
-                new_player_x -= 4.20
-                player.direction = "left"
-                player.state = "walking"
-            if keys[pygame.K_RIGHT]:
-                new_player_x += 4.20
-                player.direction = "right"
-                player.state = "walking"
-            if not keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
-                player.state = "idle"
-            if keys[pygame.K_SPACE] and player.on_ground:
-                player.jump()
-                sounds["jump"].play()
-        else:
-            if player.direction == "right":
-                new_player_x -= 1.2  # knockback
-            else:
-                new_player_x += 1.2
-
     # ------
     # UPDATE
     # ------
 
+    # check if the game is in the "playing" state
     if game_state == "playing":
-        # horizontal movement
-        new_player_rect = pygame.Rect(new_player_x, player.y, player.width, player.height)
-        x_collision = False
-
-        # check against every platform
-        for p in platforms:
-            if p.colliderect(new_player_rect):
-                x_collision = True
-                break
-
-        # set x_collision to true
-        if not x_collision:
-            player.x = new_player_x
+        dx = 0
+        if player.state != "hurt":
+            # move left
+            if keys[pygame.K_LEFT]:
+                dx = -4.2
+                player.direction = "left"
+                player.state = "walking"
+            # move right
+            elif keys[pygame.K_RIGHT]:
+                dx = 4.2
+                player.direction = "right"
+                player.state = "walking"
+            # if no horizontal movement keys are pressed
+            else:
+                player.state = "idle"
+            # jump if the player is on the ground and presses space
+            if keys[pygame.K_SPACE] and player.on_ground:
+                player.jump()
+                sounds["jump"].play()
+        else:
+            # apply knockback in the opposite direction if player == "hurt"
+            dx = -1.2 if player.direction == "right" else 1.2
 
         # update
-        player.update(platforms)
+        player.update(platforms, dx=dx, dy=0)
 
-        # recover from hurt state after 300ms
-        if player.state == "hurt":
-            if pygame.time.get_ticks() - player.hurt_timer >= 200:
-                player.state = "idle"
-
-        # see if any coins have been collected
-        player_rect = pygame.Rect(player.x, player.y, player.width, player.height)
-        
+        # check for collisions between the player and coins
         for coin in coins[:]:
-            if coin.rect.colliderect(player_rect):
-                coins.remove(coin)  # from the list
+            if player.get_rect().colliderect(coin.rect):
+                coins.remove(coin)
                 score += 1
-                coins_for_life += 1 
+                coins_for_life += 1
                 sounds["coin"].play()
-                # gives a life every 10 coins
+                # every 10 coins collected = gain 1 extra life (max 99 lives)
                 if coins_for_life >= 10:
-                    lives += 1
                     coins_for_life = 0
+                    lives = min(lives + 1, 99)
                     hearts = 3
                     sounds["extra_life"].play()
-                # win if all coins are collected
-                if len(coins) == 0:
-                    game_state = "win"
-                    win_time = pygame.time.get_ticks()  # record the time when the player wins
-    
-        # see if any life has been collected
+        # check for collisions with lives (1-UP items)
         for life in life_collectibles[:]:
-            if life.rect.colliderect(player_rect):
+            if player.get_rect().colliderect(life.rect):
                 life_collectibles.remove(life)
-                sounds["extra_life"].play()
-                lives += 1
+                lives = min(lives + 1, 99)  # add one life (max 99)
                 hearts = 3
-
-        # see if any hearts have been collected
+                sounds["extra_life"].play()
+        # check for collisions with hearts (healing items)
         for heart in hearts_collectibles[:]:
-            if heart.rect.colliderect(player_rect):
+            if player.get_rect().colliderect(heart.rect):
                 hearts_collectibles.remove(heart)
-                sounds["heart_pickup"].play()  # à condition que ce son soit chargé
-                hearts = min(hearts + 1, 3)
-                
-        # see if the player has hit an enemy
-        for enemy in enemies:
-            if enemy.colliderect(player_rect):
-                current_time = pygame.time.get_ticks()
-                # 1 sec cooldown to avoid instant multiple hits
-                if current_time - last_hit_time >= 1000:
-                    last_hit_time = current_time
-                    hearts -= 1
-                    sounds["hit"].play()
-
+                hearts = min(hearts + 1, 3)  # add one heart (max 3)
+                sounds["heart_pickup"].play()
+        # check for collisions with enemies
+        for enemy_rect in enemies[:]:
+            if player.get_rect().colliderect(enemy_rect):
+                if player.state != "hurt":
                     player.state = "hurt"
                     player.hurt_timer = pygame.time.get_ticks()
-                    if hearts <= 0:
-                        lives -= 1
+                    sounds["hit"].play()
+
+                    if hearts > 1:
+                        hearts -= 1 # lose one heart
+                    else:
+                        hearts = 0
+                        lives -= 1 # lose one life
+                        coins_for_life = 0
                         if lives <= 0:
-                            game_state = "lose"
-                            sounds["game_over"].play()
+                            game_state = "lose" # game over
                         else:
                             hearts = 3
                             sounds["lose_life"].play()
-                            coins_for_life = 0
                             game_state = "life_lost"
                             life_lost_time = pygame.time.get_ticks()
                 break
+
+        # update camera position
+        if camera:
+            camera.update()
+        
     # ----
     # DRAW
     # ----
@@ -224,13 +242,16 @@ while running:
             drawText(screen, font, "Press SPACE to Start", WIDTH // 2, HEIGHT // 2 + 115, align="center")
         
     if game_state == "playing":
-        screen.fill(DARK_GREY)
+        # screen.fill(DARK_GREY)
         # platforms
-        for p in platforms:
-            pygame.draw.rect(screen, (MUSTARD), p)
-        
+        for tile_img, pos in tiles:
+            if camera:
+                draw_pos = camera.apply(pygame.Rect(pos[0], pos[1], tile_img.get_width(), tile_img.get_height()))
+                screen.blit(tile_img, draw_pos.topleft)
+            else:
+                screen.blit(tile_img, pos)
         # player
-        player.draw(screen)
+        player.draw(screen, camera)
         # coins
         for coin in coins:
             coin.draw(screen)
@@ -289,6 +310,11 @@ while running:
         drawText(screen, font, score_text, score_x, score_y, align="topright")
         screen.blit(coin_image, (coin_x, coin_y))
 
+        # Only win automatically by collecting coins in debug mode
+        if is_debug and len(coins) == 0:
+            game_state = "win"
+            win_time = pygame.time.get_ticks()
+            sound_played = False
 
     if game_state == "win":
         screen.fill(DARK_GREY)
@@ -303,6 +329,14 @@ while running:
         screen.blit(overlay, (0, 0))
         # draw win text
         drawText(screen, font, "YOU WIN!", WIDTH // 2, HEIGHT // 2, align="center")
+    elif game_state == "main_menu":
+        screen.fill(DARK_GREY)
+        drawText(screen, font, "SELECT MODE", WIDTH // 2, HEIGHT // 4, align="center")
+
+        options = ["Start Game", "Debug Level"]
+        for i, option in enumerate(options):
+            color = MUSTARD if i == menu_selection else (200, 200, 200)
+            drawText(screen, font, option, WIDTH // 2, HEIGHT // 2 + i * 40, color=color, align="center")
     elif game_state == "life_lost":
         # background color 
         screen.fill(DARK_GREY)
