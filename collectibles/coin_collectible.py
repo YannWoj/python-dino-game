@@ -1,16 +1,19 @@
 # collectibles/coin_collectible.py
 import pygame
+from animation import Animation
+from images import coin_frames
 
 class Coin:
     def __init__(self, x, y, animation):
         self.x = x
         self.y = y
-        self.animation = animation
+        self.animation = Animation(coin_frames, frame_duration=90)
         self.rect = pygame.Rect(x, y, 32, 32)
 
     def update(self):
         self.animation.update()
 
     def draw(self, screen):
-        frame = self.animation.imageList[self.animation.imageIndex]
+        self.animation.update()
+        frame = self.animation.get_current_frame()
         screen.blit(frame, (self.x, self.y))

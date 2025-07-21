@@ -12,20 +12,17 @@
 # imports
 import pygame
 import math
-import engine
 from constants import WIDTH, HEIGHT, DARK_GREY, MUSTARD, WHITE, LIGHT_GRAY, FPS
 from player import Player
-from levels.level_0 import get_platforms
-from enemies import get_enemies
 from sounds import load_sounds
 from images import coin_frames, coin_image, enemy_image, heart_image_16,heart_image_32, lives_image, title_image
 from init_game import init
 from collectibles.coin_collectible import Coin
 from collectibles.life_collectible import Life
 from collectibles.heart_collectible import Heart
-from utils import drawText, create_coins, create_lives, create_hearts
+from utils import drawText
 from level_loader import load_level, load_level_tmx
-from levels.level_0 import get_platforms as get_debug_platforms
+from levels.level_0 import get_debug_platforms, get_debug_coins, get_debug_lives, get_debug_hearts, get_debug_enemies
 from levels.level_1 import get_platforms as get_tmx_platforms
 from camera import Camera
 
@@ -63,19 +60,19 @@ player = Player()
 platforms = []
 
 # coins
-coins = create_coins(engine, coin_frames)
+coins = []
 
 # enemies
-enemies = get_enemies()
+enemies = []
+
+# life collectibles
+life_collectibles = []
+
+# heart collectibles
+hearts_collectibles = []
 
 # camera
 camera = None
-
-# life collectibles
-life_collectibles = create_lives(lives_image)
-
-# heart collectibles
-hearts_collectibles = create_hearts(heart_image_16) 
 
 running = True
 while running:
@@ -122,12 +119,13 @@ while running:
                     elif menu_selection == 1:
                         # debug mode
                         is_debug = True
-                        from levels.level_0 import get_platforms as get_debug_platforms
                         platforms = get_debug_platforms()
-                        coins = create_coins(engine, coin_frames)
-                        enemies = get_enemies()
-                        life_collectibles = create_lives(lives_image)
-                        hearts_collectibles = create_hearts(heart_image_16)
+                        coins = get_debug_coins(coin_frames)
+                        enemies = get_debug_enemies()
+                        life_collectibles = get_debug_lives(lives_image)
+                        hearts_collectibles = get_debug_hearts(heart_image_16)
+                        tiles = []
+                        camera = None
                         game_state = "transition_to_play"
                         transition_timer = pygame.time.get_ticks()
 
@@ -166,7 +164,7 @@ while running:
                 sounds["jump"].play()
         else:
             # apply knockback in the opposite direction if player == "hurt"
-            dx = -1.2 if player.direction == "right" else 1.2
+            dx = -0.6 if player.direction == "right" else 0.6
 
         # update
         player.update(platforms, dx=dx, dy=0)
@@ -199,7 +197,7 @@ while running:
                 sounds["heart_pickup"].play()
         # check for collisions with enemies
         for enemy_rect in enemies[:]:
-            if player.get_rect().colliderect(enemy_rect):
+            if player.get_rect().colliderect(enemy_rect) and not player.is_invincible:
                 if player.state != "hurt":
                     player.state = "hurt"
                     player.hurt_timer = pygame.time.get_ticks()
@@ -224,7 +222,11 @@ while running:
         if camera:
             camera.update()
         
-    # ----
+        overlay = pygame.Surface((WIDTH, HEIGHT))
+        overlay.set_alpha(180)
+        overlay.fill(DARK_GREY)
+        screen.blit(overlay, (0, 0))
+     # ----
     # DRAW
     # ----
     # background
@@ -244,12 +246,20 @@ while running:
     if game_state == "playing":
         # screen.fill(DARK_GREY)
         # platforms
-        for tile_img, pos in tiles:
-            if camera:
-                draw_pos = camera.apply(pygame.Rect(pos[0], pos[1], tile_img.get_width(), tile_img.get_height()))
-                screen.blit(tile_img, draw_pos.topleft)
-            else:
-                screen.blit(tile_img, pos)
+        if tiles:
+            for tile_img, pos in tiles:
+                if camera:
+                    draw_pos = camera.apply(pygame.Rect(pos[0], pos[1], tile_img.get_width(), tile_img.get_height()))
+                    screen.blit(tile_img, draw_pos.topleft)
+                else:
+                    screen.blit(tile_img, pos)
+        else:
+            for plat in platforms:
+                if camera:
+                    draw_rect = camera.apply(plat)
+                else:
+                    draw_rect = plat
+                pygame.draw.rect(screen, MUSTARD, draw_rect)
         # player
         player.draw(screen, camera)
         # coins
@@ -335,7 +345,7 @@ while running:
 
         options = ["Start Game", "Debug Level"]
         for i, option in enumerate(options):
-            color = MUSTARD if i == menu_selection else (200, 200, 200)
+            color = MUSTARD if i == menu_selection else LIGHT_GRAY
             drawText(screen, font, option, WIDTH // 2, HEIGHT // 2 + i * 40, color=color, align="center")
     elif game_state == "life_lost":
         # background color 
@@ -382,18 +392,14 @@ while running:
             player.x = 300
             player.y = 0
             player.speed = 0
-            coins = coins = create_coins(engine, coin_frames) # adding back the coins if we lose a life
+            coins = get_debug_coins(coin_frames) # adding back the coins if we lose a life
             game_state = "playing"
     elif game_state == "lose":
         if not sound_played:
             sounds["game_over"].play()
             sound_played = True
         # settings
-        overlay = pygame.Surface((WIDTH, HEIGHT))
-        overlay.set_alpha(180)
-        overlay.fill(DARK_GREY)
-        screen.blit(overlay, (0, 0))
-        # draw lose text
+       # draw lose text
         drawText(screen, font, "GAME OVER", WIDTH // 2, HEIGHT // 2, align="center")
 
     # flip
