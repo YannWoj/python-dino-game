@@ -8,7 +8,7 @@ class Coin:
         self.x = x
         self.y = y
         self.animation = Animation(coin_frames, frame_duration=90)
-        self.rect = pygame.Rect(x, y, 32, 32)
+        self.rect = pygame.Rect(x, y, 32, 32) # create a collision rectangle based on the image size
 
     def update(self):
         self.animation.update()

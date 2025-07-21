@@ -398,7 +398,7 @@ while running:
         if not sound_played:
             sounds["game_over"].play()
             sound_played = True
-        # settings
+        screen.fill(DARK_GREY)
        # draw lose text
         drawText(screen, font, "GAME OVER", WIDTH // 2, HEIGHT // 2, align="center")
 
