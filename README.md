@@ -4,14 +4,14 @@
 
 🇫🇷 Dino Platformer : un jeu de plateformes construit en Python avec Pygame. Il se compose d’un niveau TMX et d’un niveau de débogage.
 
-## 📸 Pong Game Preview
+## 📸 Game Preview
 
 <img src="assets/images/github/home_title.jpg" width="auto" height="auto" alt="Dino Platformer Preview">
 
-### TMX Level
+### 1️⃣ TMX Level
 
 <img src="assets/images/github/tmx_level.jpg" width="auto" height="auto" alt="Dino Platformer Preview">
 
-### Debug Level
+### 0️⃣ Debug Level
 
 <img src="assets/images/github/debug_level.jpg" width="auto" height="auto" alt="Dino Platformer Preview">
