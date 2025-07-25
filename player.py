@@ -72,10 +72,10 @@ class Player:
             screen.blit(flipped_frame, draw_pos)
 
         # draw red collision rectangle for the player (to delete later)
-        if camera:
-            pygame.draw.rect(screen, (255, 0, 0), camera.apply(self.get_rect()), 1)
-        else:
-            pygame.draw.rect(screen, (255, 0, 0), self.get_rect(), 1)
+        # if camera:
+        #     pygame.draw.rect(screen, (255, 0, 0), camera.apply(self.get_rect()), 1)
+        # else:
+        #     pygame.draw.rect(screen, (255, 0, 0), self.get_rect(), 1)
 
     def update(self, platforms: list, dx: float = 0, dy: float = 0):
         # handle blinking during invincibility

@@ -169,6 +169,18 @@ while running:
         # update
         player.update(platforms, dx=dx, dy=0)
 
+        # if the player is falling
+        if player.y > HEIGHT + 100:
+            sounds["lose_life"].play()
+            lives -= 1
+            if lives <= 0:
+                game_state = "lose"
+            else:
+                hearts = 3
+                game_state = "life_lost"
+                life_lost_time = pygame.time.get_ticks()
+            continue
+
         # check for collisions between the player and coins
         for coin in coins[:]:
             if player.get_rect().colliderect(coin.rect):
@@ -392,7 +404,8 @@ while running:
             player.x = 300
             player.y = 0
             player.speed = 0
-            coins = get_debug_coins(coin_frames) # adding back the coins if we lose a life
+            if is_debug:
+                coins = get_debug_coins(coin_frames) # adding back the coins if we lose a life for debug
             game_state = "playing"
     elif game_state == "lose":
         if not sound_played:
