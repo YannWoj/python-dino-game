@@ -14,4 +14,4 @@
 
 ### 0️⃣ Debug Level
 
-<img src="assets/images/github/debug_level.jpg" width="auto" height="auto" alt="Dino Platformer Preview">
+<img src="assets/images/github/debug_level.png" width="auto" height="auto" alt="Dino Platformer Preview">
