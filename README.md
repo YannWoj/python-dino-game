@@ -1,4 +1,4 @@
-# Dino Platformer Game
+# Dino Platformer Game (Python)
 
 🇺🇸 A platformer game built with Python and Pygame. It features one TMX level and one debug level.
 
